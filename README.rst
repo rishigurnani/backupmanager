@@ -6,15 +6,15 @@ backupmanager is a lightweight Python-based backup tool that:
 - Removes all files from a specified destination directory.
 - Recursively copies files under a certain size threshold from a source directory to a destination directory.
 - Checks user inactivity on macOS (using Quartz) and only runs when the user is active.
-- Uses a `stop.txt` file as a signal to stop execution gracefully.
+- Uses a stop.txt file as a signal to stop execution gracefully.
 
 Requirements
 ------------
 
 - Python 3.x
-- macOS (due to the Quartz idle time detection; for other operating systems, you'll need a different idle detection mechanism)
-- Quartz (part of macOS, no additional installation required)
-- `shutil`, `os`, and `time` modules included in the standard library
+- macOS (due to Quartz-based idle time detection)
+- Quartz (included with macOS, no separate install required)
+- Standard Python libraries: os, shutil, time, datetime, Quartz
 
 Installation and Setup
 ----------------------
@@ -37,36 +37,92 @@ Installation and Setup
 
       python3 -m venv venv
       source venv/bin/activate  # On macOS/Linux
-      venv\Scripts\activate     # On Windows
+      venv\Scripts\activate     # On Windows (only if using a different OS environment)
 
-4. Place a `stop.txt` file in the same directory as the script to keep it running. Remove or rename `stop.txt` to stop the program.
+4. Place a stop.txt file in the same directory as your main script (run.py). This file signals the script to keep running. Removing or renaming stop.txt will stop the script gracefully.
 
 Usage
 -----
 
-1. Edit the constants at the top of the script (e.g., `COPYTO_FOLDER`, `COPYFROM_FOLDER`, `SIZE_THRESHOLD`) to match your needs.
+Manual Launch
+-------------
 
-2. Run the script:
+1. Edit Script Constants:
+   
+   Open run.py and adjust the constants at the top:
+   
+   - COPYTO_FOLDER: The destination folder where files will be copied.
+   - COPYFROM_FOLDER: The source folder from which files will be copied.
+   - SIZE_THRESHOLD: The maximum file size (in bytes) for files to be copied.
+   - IDLE_THRESHOLD: The idle time in seconds before the script pauses tasks if the user is inactive.
+   - CHECK_INTERVAL: How often (in seconds) the script checks for idle time and performs tasks.
+
+2. Run the Script:
+   
+   Ensure stop.txt is present. Then run:
    
    .. code-block:: bash
 
       python3 run.py
 
    The script will:
-   
-   - Continuously run in the background (as long as `stop.txt` is present).
-   - Remove all files from the destination directory.
-   - Recursively copy files below the defined size threshold from the source directory.
-   - Only run these tasks while the user is active on the laptop.
+   - Continuously monitor the user’s activity.
+   - When the user is active, remove all files from the destination folder and then recursively copy files below SIZE_THRESHOLD from the source to the destination.
+   - Sleep for CHECK_INTERVAL seconds between checks.
+   - Stop when stop.txt is removed or renamed.
 
-3. To stop the script, remove or rename `stop.txt`. The script will exit gracefully on the next iteration.
+3. Stopping the Script:
+   
+   Simply delete or rename stop.txt. The script will detect its absence on the next loop and exit gracefully.
+
+Launch at Startup (Optional)
+----------------------------
+
+If you want the script to run automatically when your Mac starts up, you can use launchd:
+
+1. Create a Launch Agent Plist File:
+   
+   In ~/Library/LaunchAgents/, create a plist file (for example, com.yourusername.backupmanager.plist) with content similar to:
+   
+   .. code-block:: xml
+
+      <?xml version="1.0" encoding="UTF-8"?>
+      <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+         "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+      <plist version="1.0">
+      <dict>
+          <key>Label</key>
+          <string>com.yourusername.backupmanager</string>
+          <key>ProgramArguments</key>
+          <array>
+              <string>/usr/bin/python3</string>
+              <string>/path/to/run.py</string>
+          </array>
+          <key>RunAtLoad</key>
+          <true/>
+          <key>StandardOutPath</key>
+          <string>/path/to/output.log</string>
+          <key>StandardErrorPath</key>
+          <string>/path/to/error.log</string>
+      </dict>
+      </plist>
+
+2. Load the Launch Agent:
+
+   .. code-block:: bash
+
+      launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.yourusername.backupmanager.plist
+
+3. Verify and Reboot:
+   
+   After loading the plist, reboot your Mac. The script should now run automatically at startup. To stop it, remove stop.txt as described above.
 
 Contributing
 ------------
 
-Contributions are welcome! Feel free to submit issues, fork the repository, and create pull requests.
+Contributions are welcome. Feel free to submit issues, fork the repository, and create pull requests.
 
 License
 -------
 
-This project is released under the MIT License. See `LICENSE` for details.
+This project is released under the MIT License. See LICENSE for details.
