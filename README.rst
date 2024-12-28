@@ -3,8 +3,7 @@ backupmanager
 
 backupmanager is a lightweight Python-based backup tool that:
 
-- Removes all files from a specified destination directory.
-- Recursively copies files under a certain size threshold from a source directory to a destination directory.
+- Recursively copies files under a certain size threshold from a source directory (e.g., a directory that isn't being backed up) to a destination directory (e.g., a directory that is being backed up).
 - Checks user inactivity on macOS (using Quartz) and only runs when the user is active.
 - Uses a stop.txt file as a signal to stop execution gracefully.
 
