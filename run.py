@@ -35,10 +35,11 @@ def log(message):
 
 def remove_all_files(folder_path):
     """
-    Remove all files (and symlinks) recursively from the specified folder.
-    This will not remove directories themselves, just the files within them.
+    Remove all files and subdirectories (including symlinks) recursively from the specified folder,
+    leaving the folder itself intact.
     """
-    for root, dirs, files in os.walk(folder_path):
+    for root, dirs, files in os.walk(folder_path, topdown=False):
+        # Remove all files in the current directory
         for filename in files:
             file_path = os.path.join(root, filename)
             try:
@@ -46,7 +47,16 @@ def remove_all_files(folder_path):
                     os.unlink(file_path)
                     log(f"Removed file: {file_path}")
             except Exception as e:
-                log(f"Failed to delete {file_path}. Reason: {e}")
+                log(f"Failed to delete file {file_path}. Reason: {e}")
+
+        # Remove all subdirectories in the current directory
+        for dirname in dirs:
+            dir_path = os.path.join(root, dirname)
+            try:
+                os.rmdir(dir_path)
+                log(f"Removed directory: {dir_path}")
+            except Exception as e:
+                log(f"Failed to remove directory {dir_path}. Reason: {e}")
 
 def copy_files_below_size(src_folder, dest_folder, max_size):
     """
